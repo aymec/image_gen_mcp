@@ -19,6 +19,11 @@ This project provides an HTTP server for image generation using Stable Diffusion
    pip install -r requirements.txt
    ```
 
+4. Install the MCP package (for Goose integration):
+   ```bash
+   pip install -e .
+   ```
+
 ## Running the Services
 
 ### Image Generation Server
@@ -47,13 +52,36 @@ On MacOS, change the port or try disabling the 'AirPlay Receiver' service from S
 
 The MCP server provides a standardized interface for AI agents:
 
+#### Legacy Flask MCP Server
+
+A Flask-based MCP server is provided for backward compatibility:
+
 ```bash
-python mcp_server.py
+python flask_mcp_server.py
 ```
 
 This service runs on port 6000 by default. You can specify a different port:
 ```bash
+python flask_mcp_server.py 7000
+```
+
+#### FastMCP Server (for Goose Integration)
+
+This project now includes a fastMCP implementation for integration with Goose:
+
+**Running the packaged fastMCP server:**
+```bash
+image-gen-mcp --port 6000
+```
+
+**Using the legacy entry point (points to the packaged version):**
+```bash
 python mcp_server.py 7000
+```
+
+**Using MCP development server for testing:**
+```bash
+mcp dev src/image_gen_mcp/server.py
 ```
 
 ## Usage
@@ -112,6 +140,30 @@ You can get the schema of available tools:
 curl http://localhost:6000/mcp/schema
 ```
 
+## File Organization
+
+- `generate_image.py` - The main image generation server using Stable Diffusion
+- `flask_mcp_server.py` - Legacy Flask-based MCP server implementation
+- `mcp_server.py` - Entry point script that uses the packaged fastMCP implementation
+- `src/image_gen_mcp/` - Package directory containing the fastMCP implementation
+  - `server.py` - The fastMCP server implementation
+  - `__init__.py` - Package initialization and CLI entry point
+  - `__main__.py` - Enables running the package as a module
+
+## Integration with Goose
+
+To add this MCP server as an extension in Goose:
+
+1. Go to `Settings > Extensions > Add`.
+2. Set the `Type` to `StandardIO`.
+3. Provide ID "image_generator", name "Image Generator", and an appropriate description.
+4. In the `Command` field, provide the absolute path to your executable:  
+   ```
+   uv run /full/path/to/your/project/.venv/bin/image-gen-mcp
+   ```
+
+Once integrated, you can use the image generation tool in Goose by asking it to generate an image with a specific prompt.
+
 ## Service Architecture
 
 1. **Image Generation Server** (generate_image.py)
@@ -120,7 +172,7 @@ curl http://localhost:6000/mcp/schema
    - Returns filename and filepath information
    - Runs on port 5000
 
-2. **MCP Server** (mcp_server.py)
+2. **MCP Server** (mcp_server.py / image-gen-mcp package)
    - Provides a standardized MCP interface for AI agents
    - Forwards requests to the Image Generation Server
    - Passes through the filename and filepath information
@@ -130,7 +182,7 @@ curl http://localhost:6000/mcp/schema
 
 If running in daemon mode, stop the image generation server:
 ```bash
-kill $(cat server.pid)
+kill $(cat logs/server.pid)
 ```
 
 For services running in foreground mode, use Ctrl+C. 

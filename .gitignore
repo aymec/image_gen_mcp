@@ -36,6 +36,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+uv.lock
 
 # OS specific files
 .DS_Store
