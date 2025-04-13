@@ -35,6 +35,11 @@ python generate_image.py
 python generate_image.py --daemon
 ```
 
+**Custom port:**
+```bash
+python generate_image.py --port 5001
+```
+
 This service runs on port 5000 by default.  
 On MacOS, change the port or try disabling the 'AirPlay Receiver' service from System Preferences -> General -> AirDrop & Handoff as it already uses port 5000.
 
@@ -63,7 +68,14 @@ curl -X POST http://localhost:5000/generate \
   -d '{"prompt": "A futuristic cityscape at sunset"}'
 ```
 
-The response will be the generated image (binary data).
+The response will include the filename and filepath:
+
+```json
+{
+  "filename": "123e4567-e89b-12d3-a456-426614174000.png",
+  "filepath": "generated_images/123e4567-e89b-12d3-a456-426614174000.png"
+}
+```
 
 ### MCP Interface for AI Agents
 
@@ -80,15 +92,14 @@ curl -X POST http://localhost:6000/mcp \
   }'
 ```
 
-The response will include the image as a base64-encoded string:
+The response will include the filename and filepath:
 
 ```json
 {
   "status": "success",
   "result": {
-    "image_data": "base64-encoded-image-data",
-    "mime_type": "image/png",
-    "prompt": "A futuristic cityscape at sunset"
+    "filename": "123e4567-e89b-12d3-a456-426614174000.png",
+    "filepath": "generated_images/123e4567-e89b-12d3-a456-426614174000.png"
   }
 }
 ```
@@ -106,12 +117,13 @@ curl http://localhost:6000/mcp/schema
 1. **Image Generation Server** (generate_image.py)
    - Handles the actual image generation using Stable Diffusion
    - Provides a simple HTTP API for image generation
+   - Returns filename and filepath information
    - Runs on port 5000
 
 2. **MCP Server** (mcp_server.py)
    - Provides a standardized MCP interface for AI agents
    - Forwards requests to the Image Generation Server
-   - Converts binary image responses to base64 for JSON compatibility
+   - Passes through the filename and filepath information
    - Runs on port 6000
 
 ## Stopping the Services

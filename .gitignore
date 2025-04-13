@@ -8,6 +8,13 @@ env/
 generated_images/*
 !generated_images/.gitkeep
 
+# Logs
+logs/*
+!logs/.gitkeep
+*.log
+server.log
+server.pid
+
 # Python artifacts
 __pycache__/
 *.py[cod]
@@ -29,11 +36,6 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-
-# Logs
-*.log
-server.log
-server.pid
 
 # OS specific files
 .DS_Store

@@ -1,9 +1,6 @@
 import json
 import requests
 from flask import Flask, request, jsonify
-import base64
-import io
-from PIL import Image
 
 app = Flask(__name__)
 
@@ -59,8 +56,7 @@ def handle_generate_image(mcp_request):
         # Call the image generation service
         response = requests.post(
             IMAGE_GEN_URL,
-            json={"prompt": prompt},
-            stream=True
+            json={"prompt": prompt}
         )
         
         if response.status_code != 200:
@@ -69,19 +65,15 @@ def handle_generate_image(mcp_request):
                 "message": f"Image generation failed: {response.text}"
             }), response.status_code
         
-        # Convert the image to base64 for inclusion in the response
-        image = Image.open(io.BytesIO(response.content))
-        buffered = io.BytesIO()
-        image.save(buffered, format="PNG")
-        img_str = base64.b64encode(buffered.getvalue()).decode()
+        # Parse the response which contains the filename and path
+        result = response.json()
         
-        # Return a successful MCP response with the image data
+        # Return a successful MCP response with the image information
         return jsonify({
             "status": "success",
             "result": {
-                "image_data": img_str,
-                "mime_type": "image/png",
-                "prompt": prompt
+                "filename": result["filename"],
+                "filepath": result["filepath"]
             }
         })
     

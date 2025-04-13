@@ -15,6 +15,9 @@ app = Flask(__name__)
 IMAGES_DIR = "generated_images"
 os.makedirs(IMAGES_DIR, exist_ok=True)
 
+# Server configuration
+SERVER_PORT = 5000
+
 # Initialize model globally
 def initialize_model():
     global pipe
@@ -58,8 +61,11 @@ def generate_image():
         # Save the image
         image.save(filepath)
         
-        # Return the image file
-        return send_file(filepath, mimetype='image/png')
+        # Return the image file path and prompt
+        return jsonify({
+            "filename": filename,
+            "filepath": filepath
+        })
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -69,7 +75,7 @@ def run_server():
     initialize_model()
     
     # Run the Flask app
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=SERVER_PORT)
 
 def daemonize():
     # Fork the first time
@@ -81,7 +87,7 @@ def daemonize():
         sys.exit(1)
     
     # Decouple from parent environment
-    os.chdir('/')
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))  # Change to script directory instead of root
     os.setsid()
     os.umask(0)
     
@@ -94,21 +100,34 @@ def daemonize():
         print(f"Fork #2 failed: {e}")
         sys.exit(1)
     
+    # Create logs directory if it doesn't exist
+    LOGS_DIR = "logs"
+    os.makedirs(LOGS_DIR, exist_ok=True)
+    
     # Redirect standard file descriptors
     with open('/dev/null', 'r') as f:
         os.dup2(f.fileno(), sys.stdin.fileno())
-    with open('server.log', 'a') as f:
+    with open(os.path.join(LOGS_DIR, 'server.log'), 'a') as f:
         os.dup2(f.fileno(), sys.stdout.fileno())
         os.dup2(f.fileno(), sys.stderr.fileno())
     
     # Write PID file
-    with open('server.pid', 'w') as f:
+    with open(os.path.join(LOGS_DIR, 'server.pid'), 'w') as f:
         f.write(str(os.getpid()))
     
     # Run the server
     run_server()
 
 if __name__ == "__main__":
+    # Check for custom port in command line arguments
+    for i, arg in enumerate(sys.argv):
+        if arg == "--port" and i + 1 < len(sys.argv):
+            try:
+                SERVER_PORT = int(sys.argv[i + 1])
+                print(f"Using custom port: {SERVER_PORT}")
+            except ValueError:
+                print(f"Invalid port number: {sys.argv[i + 1]}, using default port {SERVER_PORT}")
+    
     if len(sys.argv) > 1 and sys.argv[1] == "--daemon":
         print("Starting server as daemon...")
         daemonize()
