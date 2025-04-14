@@ -21,6 +21,7 @@ This project provides an HTTP server for image generation using Stable Diffusion
 
 4. Install the MCP package (for Goose integration):
    ```bash
+   pip install 'mcp[cli]>=1.6.0'  # Note: quotes are required to escape the brackets
    pip install -e .
    ```
 
@@ -50,38 +51,19 @@ On MacOS, change the port or try disabling the 'AirPlay Receiver' service from S
 
 ### MCP Server
 
-The MCP server provides a standardized interface for AI agents:
+The MCP server provides a standardized interface for AI agents using the Model Context Protocol (MCP):
 
-#### Legacy Flask MCP Server
-
-A Flask-based MCP server is provided for backward compatibility:
-
+**Recommended method for testing and development:**
 ```bash
-python flask_mcp_server.py
-```
-
-This service runs on port 6000 by default. You can specify a different port:
-```bash
-python flask_mcp_server.py 7000
-```
-
-#### FastMCP Server (for Goose Integration)
-
-This project now includes a fastMCP implementation for integration with Goose:
-
-**Running the packaged fastMCP server:**
-```bash
-image-gen-mcp --port 6000
-```
-
-**Using the legacy entry point (points to the packaged version):**
-```bash
-python mcp_server.py 7000
-```
-
-**Using MCP development server for testing:**
-```bash
+source .venv/bin/activate  # Activate your virtualenv
 mcp dev src/image_gen_mcp/server.py
+```
+This starts the MCP server with the FastMCP Inspector for easier debugging and testing.
+
+**Running the FastMCP server directly (production):**
+```bash
+source .venv/bin/activate  # Activate your virtualenv
+image-gen-mcp
 ```
 
 ## Usage
@@ -107,18 +89,25 @@ The response will include the filename and filepath:
 
 ### MCP Interface for AI Agents
 
-AI agents can interact with the service using the MCP protocol:
+AI agents can interact with the service using the MCP protocol. The recommended way to test the MCP server is using the FastMCP Inspector:
 
+**Running the MCP Inspector:**
 ```bash
-curl -X POST http://localhost:6000/mcp \
-  -H "Content-Type: application/json" \
-  -d '{
-    "action": "generate_image",
-    "parameters": {
-      "prompt": "A futuristic cityscape at sunset"
-    }
-  }'
+source .venv/bin/activate  # Activate your virtualenv
+mcp dev src/image_gen_mcp/server.py
 ```
+
+This will start the MCP server with the FastMCP Inspector, which provides:
+1. A web interface at http://127.0.0.1:6274 for testing and debugging
+2. A proxy server on port 6277 for forwarding MCP requests
+
+**Using the FastMCP Inspector:**
+1. Open http://127.0.0.1:6274 in your browser
+2. Use the interactive interface to:
+   - Explore available tools and their documentation
+   - Test the `generate_image` tool with your own prompts
+   - View request/response history
+   - Debug any issues with the MCP server
 
 The response will include the filename and filepath:
 
@@ -132,19 +121,9 @@ The response will include the filename and filepath:
 }
 ```
 
-### MCP Schema
-
-You can get the schema of available tools:
-
-```bash
-curl http://localhost:6000/mcp/schema
-```
-
 ## File Organization
 
 - `generate_image.py` - The main image generation server using Stable Diffusion
-- `flask_mcp_server.py` - Legacy Flask-based MCP server implementation
-- `mcp_server.py` - Entry point script that uses the packaged fastMCP implementation
 - `src/image_gen_mcp/` - Package directory containing the fastMCP implementation
   - `server.py` - The fastMCP server implementation
   - `__init__.py` - Package initialization and CLI entry point
@@ -172,11 +151,14 @@ Once integrated, you can use the image generation tool in Goose by asking it to 
    - Returns filename and filepath information
    - Runs on port 5000
 
-2. **MCP Server** (mcp_server.py / image-gen-mcp package)
+2. **MCP Server** (image-gen-mcp package)
    - Provides a standardized MCP interface for AI agents
    - Forwards requests to the Image Generation Server
    - Passes through the filename and filepath information
-   - Runs on port 6000
+   - Can be run in two modes:
+     - Direct mode (via `image-gen-mcp` command)
+     - Development mode with FastMCP Inspector (via `mcp dev` command)
+   - Development mode provides a web interface at http://127.0.0.1:6274
 
 ## Stopping the Services
 
