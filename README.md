@@ -78,14 +78,21 @@ curl -X POST http://localhost:5000/generate \
   -d '{"prompt": "A futuristic cityscape at sunset"}'
 ```
 
-The response will include the filename and filepath:
+The response will include the URL to access the generated image along with metadata:
 
 ```json
 {
   "filename": "123e4567-e89b-12d3-a456-426614174000.png",
-  "filepath": "generated_images/123e4567-e89b-12d3-a456-426614174000.png"
+  "filepath": "generated_images/123e4567-e89b-12d3-a456-426614174000.png",
+  "image_url": "http://localhost:5000/images/123e4567-e89b-12d3-a456-426614174000.png",
+  "content_type": "image/png",
+  "width": 512,
+  "height": 512,
+  "prompt": "A futuristic cityscape at sunset"
 }
 ```
+
+You can access the generated image directly via the returned `image_url`.
 
 ### MCP Interface for AI Agents
 
@@ -109,17 +116,27 @@ This will start the MCP server with the FastMCP Inspector, which provides:
    - View request/response history
    - Debug any issues with the MCP server
 
-The response will include the filename and filepath:
+The MCP response will include a structured image object with URL and metadata:
 
 ```json
 {
   "status": "success",
   "result": {
+    "type": "image",
+    "format": "png",
+    "url": "http://localhost:5000/images/123e4567-e89b-12d3-a456-426614174000.png",
+    "width": 512,
+    "height": 512,
     "filename": "123e4567-e89b-12d3-a456-426614174000.png",
-    "filepath": "generated_images/123e4567-e89b-12d3-a456-426614174000.png"
+    "filepath": "generated_images/123e4567-e89b-12d3-a456-426614174000.png",
+    "mime_type": "image/png",
+    "prompt": "A futuristic cityscape at sunset",
+    "alt_text": "AI-generated image of: A futuristic cityscape at sunset"
   }
 }
 ```
+
+This format is compatible with MCP tools like Goose, which can display the image through the provided URL rather than embedding it directly in the conversation context.
 
 ## File Organization
 
@@ -148,13 +165,14 @@ Once integrated, you can use the image generation tool in Goose by asking it to 
 1. **Image Generation Server** (generate_image.py)
    - Handles the actual image generation using Stable Diffusion
    - Provides a simple HTTP API for image generation
-   - Returns filename and filepath information
+   - Returns image URL, dimensions, and metadata
+   - Includes a direct endpoint to serve the generated images
    - Runs on port 5000
 
 2. **MCP Server** (image-gen-mcp package)
    - Provides a standardized MCP interface for AI agents
    - Forwards requests to the Image Generation Server
-   - Passes through the filename and filepath information
+   - Returns a properly formatted MCP image object with URL and metadata
    - Can be run in two modes:
      - Direct mode (via `image-gen-mcp` command)
      - Development mode with FastMCP Inspector (via `mcp dev` command)

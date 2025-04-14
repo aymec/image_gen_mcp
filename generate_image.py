@@ -8,6 +8,8 @@ import time
 import signal
 import sys
 import io
+import base64
+from PIL import Image
 
 app = Flask(__name__)
 
@@ -56,19 +58,39 @@ def generate_image():
         
         # Generate the image
         print(f"Generating image for prompt: {prompt}")
-        image = pipe(prompt).images[0]
+        original_image = pipe(prompt).images[0]
         
-        # Save the image
-        image.save(filepath)
+        # Save the full resolution image to disk
+        original_image.save(filepath)
         
-        # Return the image file path and prompt
+        # Get original image dimensions
+        width, height = original_image.size
+        
+        # Create a URL for accessing the image
+        image_url = f"http://localhost:{SERVER_PORT}/images/{filename}"
+        
+        # Return the image information
         return jsonify({
             "filename": filename,
-            "filepath": filepath
+            "filepath": filepath,
+            "image_url": image_url,
+            "content_type": "image/png",
+            "width": width,
+            "height": height,
+            "prompt": prompt
         })
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# Add a route to serve images directly
+@app.route('/images/<filename>', methods=['GET'])
+def serve_image(filename):
+    filepath = os.path.join(IMAGES_DIR, filename)
+    if os.path.exists(filepath):
+        return send_file(filepath, mimetype='image/png')
+    else:
+        return jsonify({"error": "Image not found"}), 404
 
 def run_server():
     # Initialize the model

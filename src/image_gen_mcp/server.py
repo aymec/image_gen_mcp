@@ -2,7 +2,7 @@ import json
 import requests
 import uuid
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from mcp.server.fastmcp import FastMCP
 from mcp.shared.exceptions import McpError
@@ -23,7 +23,7 @@ def generate_image(prompt: str) -> Dict[str, Any]:
         prompt: Text description of the image to generate
         
     Returns:
-        Dictionary containing the filename and filepath of the generated image
+        Dictionary containing the image in a format compatible with MCP tools
     
     Usage:
         generate_image("A futuristic cityscape at sunset")
@@ -52,13 +52,21 @@ def generate_image(prompt: str) -> Dict[str, Any]:
                 )
             )
         
-        # Parse the response which contains the filename and path
+        # Parse the response which contains the filename, path, and image data
         result = response.json()
         
-        # Return the image file information
+        # Return the image data in MCP-compatible format
         return {
+            "type": "image",
+            "format": result["content_type"].split("/")[1],  # Get format from content_type
+            "url": result["image_url"],  # Direct URL to image
+            "width": result.get("width"),
+            "height": result.get("height"),
             "filename": result["filename"],
-            "filepath": result["filepath"]
+            "filepath": result["filepath"],
+            "mime_type": result["content_type"],
+            "prompt": prompt,  # Include the original prompt
+            "alt_text": f"AI-generated image of: {prompt}"  # Helpful for accessibility
         }
         
     except requests.RequestException as e:
