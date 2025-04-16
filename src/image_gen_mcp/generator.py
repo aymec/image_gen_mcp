@@ -4,23 +4,22 @@ from flask import Flask, request, jsonify, send_file
 import uuid
 import os
 import threading
-import time
-import signal
-import sys
-import io
-import base64
 from PIL import Image
+import sys
 
+# Get the image directory from environment variables
+IMAGES_DIR = os.environ.get("IMAGE_GEN_DIR")
+
+# Create Flask app
 app = Flask(__name__)
-
-# Create a directory for storing generated images if it doesn't exist
-IMAGES_DIR = "generated_images"
-os.makedirs(IMAGES_DIR, exist_ok=True)
 
 # Server configuration
 SERVER_PORT = 5000
 
-# Initialize model globally
+# Global variable for the model pipeline
+pipe = None
+
+# Initialize model
 def initialize_model():
     global pipe
     
@@ -38,7 +37,7 @@ def initialize_model():
     model_id = "runwayml/stable-diffusion-v1-5"
     pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16)
     pipe = pipe.to(device)
-    print("Model loaded and ready")
+    print("Image generation model loaded and ready")
 
 # API endpoint for image generation
 @app.route('/generate', methods=['POST'])
@@ -92,67 +91,23 @@ def serve_image(filename):
     else:
         return jsonify({"error": "Image not found"}), 404
 
-def run_server():
+def start_image_generator(port=5000):
+    """
+    Start the image generation server in a separate thread
+    
+    Args:
+        port: The port number to run the server on
+    """
+    global SERVER_PORT
+    SERVER_PORT = port
+    
     # Initialize the model
     initialize_model()
     
-    # Run the Flask app
-    app.run(host='0.0.0.0', port=SERVER_PORT)
-
-def daemonize():
-    # Fork the first time
-    try:
-        if os.fork() > 0:
-            sys.exit(0)  # Parent exits
-    except OSError as e:
-        print(f"Fork #1 failed: {e}")
-        sys.exit(1)
+    # Start Flask app in a separate thread
+    thread = threading.Thread(target=lambda: app.run(host='0.0.0.0', port=SERVER_PORT, threaded=True))
+    thread.daemon = True
+    thread.start()
     
-    # Decouple from parent environment
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))  # Change to script directory instead of root
-    os.setsid()
-    os.umask(0)
-    
-    # Fork the second time
-    try:
-        if os.fork() > 0:
-            sys.exit(0)  # Parent exits
-        print("Server successfully daemonized")
-    except OSError as e:
-        print(f"Fork #2 failed: {e}")
-        sys.exit(1)
-    
-    # Create logs directory if it doesn't exist
-    LOGS_DIR = "logs"
-    os.makedirs(LOGS_DIR, exist_ok=True)
-    
-    # Redirect standard file descriptors
-    with open('/dev/null', 'r') as f:
-        os.dup2(f.fileno(), sys.stdin.fileno())
-    with open(os.path.join(LOGS_DIR, 'server.log'), 'a') as f:
-        os.dup2(f.fileno(), sys.stdout.fileno())
-        os.dup2(f.fileno(), sys.stderr.fileno())
-    
-    # Write PID file
-    with open(os.path.join(LOGS_DIR, 'server.pid'), 'w') as f:
-        f.write(str(os.getpid()))
-    
-    # Run the server
-    run_server()
-
-if __name__ == "__main__":
-    # Check for custom port in command line arguments
-    for i, arg in enumerate(sys.argv):
-        if arg == "--port" and i + 1 < len(sys.argv):
-            try:
-                SERVER_PORT = int(sys.argv[i + 1])
-                print(f"Using custom port: {SERVER_PORT}")
-            except ValueError:
-                print(f"Invalid port number: {sys.argv[i + 1]}, using default port {SERVER_PORT}")
-    
-    if len(sys.argv) > 1 and sys.argv[1] == "--daemon":
-        print("Starting server as daemon...")
-        daemonize()
-    else:
-        print("Starting server in foreground...")
-        run_server()
+    print(f"Image generation service started on port {SERVER_PORT}")
+    return thread

@@ -9,6 +9,7 @@ dependencies = [
     "transformers>=4.51.2",
     "accelerate>=1.6.0",
     "torch>=2.6.0",
+    "flask>=3.1.0",
     "mcp[cli]>=1.6.0",
     "requests>=2.32.3",
     "Pillow>=11.2.1",
@@ -20,4 +21,4 @@ image-gen-mcp = "image_gen_mcp:main"
 
 [build-system]
 requires = ["hatchling"]
-build-backend = "hatchling.build" 
+build-backend = "hatchling.build"

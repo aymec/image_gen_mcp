@@ -3,17 +3,18 @@ myvirtualenv/
 venv/
 env/
 .env/
+.venv/
 
 # Generated images
 generated_images/*
-!generated_images/.gitkeep
+generated_images/
 
 # Logs
 logs/*
-!logs/.gitkeep
 *.log
 server.log
 server.pid
+logs/
 
 # Python artifacts
 __pycache__/

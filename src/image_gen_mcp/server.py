@@ -82,4 +82,4 @@ def generate_image(prompt: str) -> Dict[str, Any]:
                 INTERNAL_ERROR,
                 f"Failed to generate image: {str(e)}"
             )
-        ) 
+        )
