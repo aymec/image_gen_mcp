@@ -1,6 +1,7 @@
 # AI Image Generation Server with MCP Interface
 
-This project provides a Model Context Protocol (MCP) server with integrated Stable Diffusion image generation capabilities, enabling AI agents to request and receive generated images.
+This project provides a Model Context Protocol (MCP) server with integrated Stable Diffusion image generation capabilities, enabling AI agents to request and receive generated images.  
+This project is based on the example provided by [Block's Goose Custom Extension tutorial](https://block.github.io/goose/docs/tutorials/custom-extensions/).  
 
 ## Setup
 
