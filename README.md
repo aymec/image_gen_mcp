@@ -121,6 +121,10 @@ To add this MCP server as an extension in Goose:
 
 Once integrated, you can use the image generation tool in Goose by asking it to generate an image with a specific prompt.
 
+It works immediately when using OpenAI GPT-4o.  
+It is possible to run everytthing locally with Ollama, After trying a few models, the only one that worked is [mistral-small3.1](https://ollama.com/library/mistral-small3.1).  
+Even on a high-end MacBookPro, the response from mistral-small3.1  is much slower than with OpenAI GPT-4o.  
+
 ## Service Architecture
 
 Both services are integrated into a single application:
